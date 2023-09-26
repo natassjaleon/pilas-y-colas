@@ -18,6 +18,10 @@ def load_archive(path):
     f.close()
     return archive
 
+def update_archive(path):
+    f = open(path)
+    
+
 # Clase para crear y gestionar una cola para las reservaciones
 class MyQueue():
     def __init__(self):
@@ -629,7 +633,7 @@ class Historial:
     def _export_aux(self, node, file):
         if node is not None:
             file.write(node.action.date+" ")
-            file.write(node.action.action)
+            file.write(node.action.action+"\n")
             self._export_aux(node.next, file)
             
 
@@ -1098,8 +1102,12 @@ def menu(hotel_chain_name, hotel_chain, historial):
         
         elif option == '0':
             # exporta el historial de acciones a un archivo .txt y cierra el programa
-            file = open('historial.text','w')
+            file = open('historial.text','a')
+            file.write("Acceso al sistema: "+datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
+            file.write("\n")
             historial.export(file)
+            file.write("\n")
+            file.write("\n")
             file.close()
             return print("\nFin.")
         else:
