@@ -23,7 +23,7 @@
           "payment_method": "Efectivo",
           "notes": "Solicita check-in anticipado.",
           "reservation_status": "Confirmado",
-          "hotel": "Natassja"
+          "hotel": "Maracay"
         },
         {
           "client_name":"Ana Ojeda",
@@ -41,7 +41,7 @@
           "payment_method": "Efectivo",
           "notes": "Solicita check-in anticipado.",
           "reservation_status": "Confirmado",
-          "hotel": "Oriana"
+          "hotel": "Maracay"
         },
         {
           "client_name": "Miguel Lazo",
@@ -59,7 +59,7 @@
           "payment_method": "PayPal",
           "notes": "Solicita check-out aplazado.",
           "reservation_status": "Confirmado",
-          "hotel": "Natassja"
+          "hotel": "Maracay"
         },
         {
           "client_name": "Eva Villas",
@@ -77,7 +77,7 @@
           "payment_method": "Efectivo",
           "notes": "Solicita check-out anticipado.",
           "reservation_status": "Confirmado",
-          "hotel": "Oriana"
+          "hotel": "Maracay"
         },
         {
           "client_name": "Grace Wilson",
@@ -95,7 +95,7 @@
           "payment_method": "Tarjeta",
           "notes": "Solicita check-in aplazado.",
           "reservation_status": "Confirmado",
-          "hotel": "Oriana"
+          "hotel": "Maracay"
         },
         {
           "client_name": "Miguel Lazo",
@@ -113,7 +113,7 @@
           "payment_method": "Paypal",
           "notes": null,
           "reservation_status": "Confirmado",
-          "hotel": "Natassja"
+          "hotel": "Maracay"
         },
         {
           "client_name": "Miguel Lazo",
@@ -131,7 +131,7 @@
           "payment_method": "Efectivo",
           "notes": null,
           "reservation_status": "Confirmado",
-          "hotel": "Natassja"
+          "hotel": "Maracay"
         },
         {
           "client_name": "Javier Figueroa",
@@ -149,7 +149,7 @@
           "payment_method": "Transferencia bancaria",
           "notes": null,
           "reservation_status": "Pendiente",
-          "hotel": "Natassja"
+          "hotel": "Maracay"
         },
         {
           "client_name": "Olivia Romero",
@@ -167,7 +167,7 @@
           "payment_method": "Efectivo",
           "notes": "Solicita check-out aplazado.",
           "reservation_status": "Confirmado",
-          "hotel": "Natassja"
+          "hotel": "Maracay"
         },
         {
           "client_name": "Luis Alvarado",
@@ -185,7 +185,7 @@
           "payment_method": "Tarjeta",
           "notes": "Solicita check-in anticipado.",
           "reservation_status": "Pendiente",
-          "hotel": "Natassja"
+          "hotel": "Maracay"
         },
         {
           "client_name":"Ana Ojeda",
@@ -203,7 +203,7 @@
           "payment_method": "Efectivo",
           "notes": "Solicita check-in anticipado.",
           "reservation_status": "Confirmado",
-          "hotel": "Natassja"
+          "hotel": "Maracay"
         },
         {
           "client_name": "Luis Alvarado",
@@ -221,7 +221,7 @@
           "payment_method": "Tarjeta",
           "notes": "Solicita check-in anticipado.",
           "reservation_status": "Pendiente",
-          "hotel": "Natassja"
+          "hotel": "Maracay"
         }
       ]     
  }

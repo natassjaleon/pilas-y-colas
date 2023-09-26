@@ -2,6 +2,7 @@ import os # para manipular paths
 import json # para cargar archivos JSON
 from datetime import datetime # para operar con objetos de fecha
 from uuid import uuid4 # para generar IDs
+import sys # para exportar .txt file
 
 # encuentra el path del archivo a cargar
 def find_path(name):
@@ -361,7 +362,14 @@ class Hotel:
 
     # Agrega reservación a la cola
     def add_reservation(self, reservation):
-        self.reservation_queue.enqueue(Reservation(reservation))
+        try:
+            r = Reservation(reservation)
+            self.reservation_queue.enqueue(r)
+            print("\nSe creó la reservación exitosamente.")
+            return True
+        except:
+            print("\nNo se pudo crear la reservación.")
+            return False
 
     # retorna si la cola de reservaciones está vacía
     def are_reservations(self):
@@ -385,8 +393,10 @@ class Hotel:
             # si existe, posiciona reservación al frente de la cola
             self.reservation_queue.find_id(reservation_id)
             # remueve primer elemento de la cola
-            return self.reservation_queue.dequeue()
-        return print("\nNo se encontró la reservación.")
+            self.reservation_queue.dequeue()
+            return True
+        print("\nNo se encontró la reservación.")
+        return False
             
     # agrega habitación a la lista de habitaciones del hotel
     def add_room(self, room_number, room_details):
@@ -406,13 +416,13 @@ No se encuentra disponible. Reservación:""" %(room_number,self.available_rooms[
             print("""\nHabitación %s: %s
 Se encuentra disponible.""" %(room_number, self.available_rooms[room_number]))
             return True
-        print("No se encontró dentro de las habitaciones del hotel.")
+        print("\nNo se encontró dentro de las habitaciones del hotel.")
         return False
 
     # lista las habitaciones del hotel y su estado
     def list_rooms(self):
         if self.available_rooms == {}:
-            return print("No se encontraron habitaciones en el registro.")
+            return print("\nNo se encontraron habitaciones en el registro.")
         for key in self.available_rooms:
             print("Habitación %s: %s" %(key, self.available_rooms[key]),end='')
             if self.reservation_queue.is_reservation('room_number', key):
@@ -423,18 +433,23 @@ Se encuentra disponible.""" %(room_number, self.available_rooms[room_number]))
     # modifica la habitación seleccionada si existe en el registro y si no está ocupada
     def modify_room(self, room_number, new_details):
         if self.available_rooms == {}:
-            return print("No se encontraron habitaciones en el registro.")
+            print("\nNo se encontraron habitaciones en el registro.")
+            return False
         if room_number in self.available_rooms:
             self.available_rooms[room_number] = new_details
-            return print("Se ha modificado la habitación %s: %s exitosamente." %(room_number,self.available_rooms[room_number]))
-        print("\nNo se encontró la habitación %s dentro de las habitaciones disponibles." %room_number)  
+            print("\nSe ha modificado la habitación %s: %s exitosamente." %(room_number,self.available_rooms[room_number]))
+            return True 
+        print("\nNo se encontró la habitación %s dentro de las habitaciones disponibles." %room_number)
+        return False
 
     # elimina la habitación seleccionada si existe en el registro y si no está ocupada
     def delete_room(self, room_number):
         if room_number in self.available_rooms:
             del self.available_rooms[room_number]
-            return print("Habitación %s eliminada exitosamente." %room_number)
-        print("No se encontró la habitación %s dentro de las habitaciones disponibles." %room_number)  
+            print("\nHabitación %s eliminada exitosamente." %room_number)
+            return True
+        print("\nNo se encontró la habitación %s dentro de las habitaciones disponibles." %room_number)
+        return False
 
 class HotelNode:
     def __init__(self, hotel):
@@ -495,7 +510,8 @@ class HotelChain:
     # llama función para agregar habitación a la lista de habitaciones del hotel
     def add_room(self, hotel_name, room_number, room_details):
         # selecciona el hotel y agrega la habitación
-        self.find_hotel(hotel_name).add_room(room_number, room_details)
+        # retorna True si se agregó exitosamente
+        return self.find_hotel(hotel_name).add_room(room_number, room_details)
 
     # verifica que la habitación existe o no dentro del hotel
     def is_room(self, hotel_name, room_number):
@@ -516,18 +532,18 @@ class HotelChain:
         # selecciona el hotel y lista las habitaciones
         return self.find_hotel(hotel_name).list_rooms()
     
-    # modifica la habitación seleccionada
+    # modifica la habitación seleccionada y retorna True si se modificó exitosamente
     def modify_room(self, hotel_name, room_number, new_details):
         return self.find_hotel(hotel_name).modify_room(room_number, new_details)
     
-    # elimina la habitación seleccionada
+    # elimina la habitación seleccionada y retorna True si se eliminó exitosamente
     def delete_room(self, hotel_name, room_number):
         return self.find_hotel(hotel_name).delete_room(room_number)
     
     # llama función para agregar reservación al hotel seleccionado
     def add_reservation(self, hotel_name, reservation):
         # selecciona hotel y llama función para agregar reserva
-        self.find_hotel(hotel_name).add_reservation(reservation)
+        return self.find_hotel(hotel_name).add_reservation(reservation)
 
     # verifica si existen reservaciones creadas dentro del hotel seleccionado
     def are_reservations(self, hotel_name):
@@ -559,9 +575,64 @@ class HotelChain:
     
     # busca reservación del hotel por ID y la elimina si existe
     def delete_reservation(self, hotel_name, reservation_id):
-        self.find_hotel(hotel_name).delete_reservation(reservation_id)
+        return self.find_hotel(hotel_name).delete_reservation(reservation_id)
 
+# clase para crear objeto de acción hecha en el sistema
+class Action:
+    def __init__(self, action, date):
+        self.action = action
+        self.date = date
         
+class HistorialNode:
+    def __init__(self, action):
+        self.action = action
+        self.next = None
+        
+# clase para crear y gestionar pila del historial de acciones en el sistema
+class Historial:
+    def __init__(self):
+        self.head = None
+    def is_empty(self):
+        return self.head is None
+    def add(self, action):
+        new_node = HistorialNode(action)
+        new_node.next = self.head
+        self.head = new_node
+    def delete(self):
+        if self.is_empty():
+            return None
+        else:
+            deleted_action = self.head.action
+            self.head = self.head.snext
+            return deleted+action
+    def see_head(self):
+        if self.is_empty():
+            return None
+        else:
+            return self.head.action
+    def iterate(self):
+        if self.is_empty():
+            print("La pila está vacía")
+        else:
+            self._iterate_aux(self.head)
+            
+    def _iterate_aux(self, node):
+        if node is not None:
+            print(node.action.date, end=" ")
+            print(node.action.action)
+            self._iterate_aux(node.next)
+    # función para exportar elementos de la pila
+    def export(self, file):
+        if not self.is_empty():
+            self._export_aux(self.head, file)
+
+    def _export_aux(self, node, file):
+        if node is not None:
+            file.write(node.action.date+" ")
+            file.write(node.action.action)
+            self._export_aux(node.next, file)
+            
+
 # función para crear reservación
 def create_reservation():
     flag=True
@@ -789,7 +860,7 @@ def get_criteria():
             print("Selección inválida. Inténtelo nuevamente.")
 
 # función para gestionar las habitaciones de cada hotel individualmente
-def menu_rooms(hotel_chain_name, hotel_chain, hotel_name):
+def menu_rooms(hotel_chain_name, hotel_chain, hotel_name, historial):
     flag = True
     while flag:
         print("\nHabitaciones disponibles de %s's Hotels %s" %(hotel_chain_name, hotel_name.title()))
@@ -817,12 +888,24 @@ def menu_rooms(hotel_chain_name, hotel_chain, hotel_name):
                     if selection == '1':
                         details = input("Ingrese el nuevo tipo de habitación: ")
                         # modifica el tipo de habitación
-                        hotel_chain.modify_room(hotel_name, room_number, details.title())
-                        flag2=False
+                        x = hotel_chain.modify_room(hotel_name, room_number, details.title())
+                        if x:
+                            action = "Se modificó el tipo de la habitación "+room_number+" a: "+details.title()+", del hotel "+hotel_name.title()+"."
+                            flag2=False
+                        else:
+                            action = "Error al intentar modificar el tipo de la habitación "+room_number+" a: "+details.title()+", del hotel "+hotel_name.title()+"."
+                        historial.add(Action(action, datetime.now().strftime("%d/%m/%Y %H:%M:%S")))
+                        
                     elif selection == '2':
                         # elimina la habitación
-                        hotel_chain.delete_room(hotel_name, room_number)
-                        flag2=False
+                        x = hotel_chain.delete_room(hotel_name, room_number)
+                        if x:
+                            action = "Se eliminó la habitación "+room_number+" del hotel "+hotel_name.title()+"."
+                            flag2=False
+                        else:
+                            action = "Error al intentar eliminar habitación "+room_number+" del hotel "+hotel.name.title()+'.'
+                        historial.add(Action(action, datetime.now().strftime("%d/%m/%Y %H:%M:%S")))
+    
                     elif selection == '0':
                         flag2=False
                     else:
@@ -831,23 +914,28 @@ def menu_rooms(hotel_chain_name, hotel_chain, hotel_name):
             room_number = input("\nIngrese el número de la habitación a crear: ")
             try:
                 int(room_number) #verifica que se ingrese un # entero de la habitación a crear
+                # llama función para verificar que la habitación que se intenta crear no existe ya
+                if not hotel_chain.is_room(hotel_name, room_number):
+                    details = input("\nIngrese el tipo de habitación a crear: ")
+                    # agrega habitación a la lista de habitaciones del hotel
+                    x = hotel_chain.add_room(hotel_name, room_number, details.title())
+                    action = "Se creó y agregó la habitación "+room_number+": "+details.title()+" al hotel "+hotel_name.title()+"."
+                    historial.add(Action(action, datetime.now().strftime("%d/%m/%Y %H:%M:%S")))
+                else:
+                    action = "Error al intentar crear habitación en hotel "+hotel_name.title()+" con número de habitación ya existente: "+room_number+"."
+                    historial.add(Action(action, datetime.now().strftime("%d/%m/%Y %H:%M:%S")))
+                    print("\nHabitación %s ya en sistema." %room_number)
             except:
-                return print("Número de habitación inválido. Intente nuevamente.")
-            # llama función para verificar que la habitación que se intenta crear no existe ya
-            if not hotel_chain.is_room(hotel_name, room_number):
-                details = input("\nIngrese el tipo de habitación a crear: ")
-                # agrega habitación a la lista de habitaciones del hotel
-                hotel_chain.add_room(hotel_name, room_number, details.title())
-            else:
-                print("Habitación %s ya en sistema." %room_number)
-
+                action = "Error al intentar crear habitación en hotel "+hotel_name.title()+" con número de habitación inválido: "+room_number+"."
+                historial.add(Action(action, datetime.now().strftime("%d/%m/%Y %H:%M:%S")))
+                print("\nNúmero de habitación inválido. Intente nuevamente.")
         elif option == '0':
             return
         else:
             print("Opción inválida. Ingrese un número entero del 0 al 3.")            
         
 # menú para gestionar reservaciones por hotel
-def menu_reservations(hotel_chain_name, hotel_chain, hotel_name):
+def menu_reservations(hotel_chain_name, hotel_chain, hotel_name, historial):
     flag = True
     while flag:
         print("\nReservaciones de %s's Hotels %s" %(hotel_chain_name,hotel_name.title()))
@@ -887,19 +975,30 @@ def menu_reservations(hotel_chain_name, hotel_chain, hotel_name):
                 # id de reservación a eliminar
                 reservation_id = input("Ingrese el ID de la reservación que desea eliminar: ")
                 # elimina reservación
-                hotel_chain.delete_reservation(hotel_name, reservation_id)
+                x = hotel_chain.delete_reservation(hotel_name, reservation_id)
+                if x:
+                    action = "Se eliminó la reservación "+reservation_id+" del hotel "+hotel_name.title()+"."
+                else:
+                    action = "ID inválido. Error al intentar eliminar reservación "+reservation_id+" del hotel "+hotel_name.title()+"."
+                historial.add(Action(action, datetime.now().strftime("%d/%m/%Y %H:%M:%S")))
         elif option == '4':
             # llama función para crear reservación y la agrega al hotel seleccionado
-            hotel_chain.add_reservation(hotel_name, create_reservation())
+            reservation = create_reservation()
+            x = hotel_chain.add_reservation(hotel_name, reservation)
+            if x:
+                action = "Se creó y agregó nueva reservación al hotel "+hotel_name.title()+"."
+            else:
+                action = "Error al intentar agregar reservación al hotel "+hotel_name.title()+"."
+                historial.add(Action(action, datetime.now().strftime("%d/%m/%Y %H:%M:%S")))
         elif option == '0':
             return False
         else: print("Opción inválida. Ingrese un entero del 0 al 4.")
 
 # menú para gestionar hotel individualmente
-def menu_hotel(hotel_chain_name, hotel_chain, hotel_name):
+def menu_hotel(hotel_chain_name, hotel_chain, hotel_name, historial):
     flag = True
     while flag:
-        print("%\ns's Hotels %s" %(hotel_chain_name, hotel_name.title()))
+        print("\n%s's Hotels %s" %(hotel_chain_name, hotel_name.title()))
         print("""\n    1. Habitaciones
     2. Reservaciones
     3. Eliminar hotel
@@ -908,18 +1007,20 @@ def menu_hotel(hotel_chain_name, hotel_chain, hotel_name):
         if selection == '1':
             
             # llama a la función del menú para gestionar habitaciones
-            menu_rooms(hotel_chain_name, hotel_chain, hotel_name)
+            menu_rooms(hotel_chain_name, hotel_chain, hotel_name, historial)
             
         elif selection == '2':
 
             # llama a la función del menú para gestionar reservaciones
-            menu_reservations(hotel_chain_name, hotel_chain, hotel_name)
+            menu_reservations(hotel_chain_name, hotel_chain, hotel_name, historial)
             
         elif selection == '3':
             
             # elimina el hotel
             hotel_chain.delete_hotel(hotel_name)
-            return print("\ns's Hotels %s eliminado exitosamente." %(hotel_chain_name, hotel_name.title()))
+            action = "Se eliminó el hotel "+hotel_name.title()+" de la cadena."
+            historial.add(Action(action, datetime.now().strftime("%d/%m/%Y %H:%M:%S")))
+            return print("\n%s's Hotels %s eliminado exitosamente." %(hotel_chain_name, hotel_name.title()))
 
         elif selection == '0':
             return
@@ -928,7 +1029,7 @@ def menu_hotel(hotel_chain_name, hotel_chain, hotel_name):
             print('\nOpción inválida. Ingrese un entero del 1 al 4.')
             
 # menú principal 
-def menu(hotel_chain_name, hotel_chain):
+def menu(hotel_chain_name, hotel_chain, historial):
     print("\nCadena de hoteles %s's Hotels" %hotel_chain_name)
     flag=True
     while flag:
@@ -937,6 +1038,7 @@ def menu(hotel_chain_name, hotel_chain):
 2. Listar reservaciones por hotel 
 3. Seleccionar hotel (modificar/eliminar)
 4. Crear hotel
+5. Ver historial de acciones del sistema
 0. Salir""")
         option = input("\nSeleccione una opción: ")
         
@@ -974,7 +1076,7 @@ def menu(hotel_chain_name, hotel_chain):
                 if hotel_name.title() in hotels:
                     
                     # llama función del menú para gestionar cada hotel individualmente
-                    menu_hotel(hotel_chain_name, hotel_chain, hotel_name)
+                    menu_hotel(hotel_chain_name, hotel_chain, hotel_name, historial)
                 else:
                     print("\nNo se encontró hotel %s" %hotel_name)
                     
@@ -988,49 +1090,27 @@ def menu(hotel_chain_name, hotel_chain):
                 print("\n%s agregado exitosamente a la cadena de hoteles." %getattr(hotel,'name'))
             except:
                 print("\n%s no pudo ser creado." %getattr(hotel,'name'))
-                
+
+        elif option == '5':
+            # imprime el historial de acciones realizadas hasta ahora
+            print("\nHistorial de acciones realizadas en el sistema: ")
+            historial.iterate()
+        
         elif option == '0':
-            flag = False
-            print("\nFin.")
-            
+            # exporta el historial de acciones a un archivo .txt y cierra el programa
+            file = open('historial.text','w')
+            historial.export(file)
+            file.close()
+            return print("\nFin.")
         else:
-            print("\nOpción inválida. Ingrese un entero del 0 al 4.")
+            print("\nOpción inválida. Ingrese un entero del 0 al 5.")
 
-
-# Example usage:
-#hotel_chain = HotelChain()
-#hotel1 = Hotel("Hotel A", "Address A", "123-456-7890")
-#hotel2 = Hotel("Hotel B", "Address B", "987-654-3210")
-#hotel_chain.add_hotel(hotel1)
-#hotel_chain.add_hotel(hotel2)
-
-# Load reservations from a JSON file
-#config = load_archive(find_path('config.json'))
-#hotel_chain_name = config['hotel_chain_name']
-
-#hotels=[]
-#for path in config['file_route_name']:
-#    hotels.append(Hotel(load_archive(path)))
-#reservations = load_archive(config.get('file_route_name'))
-
-    
-#hotels = [Hotel(reservations)]
-#for hotel in hotels:
-    #for reservation in reservations['reservations']:
-    #    h.add_reservation(Reservation(reservation))
-#    hotel_chain.add_hotel(hotel)
-
-#hotel_chain.add_hotel(hotel)
-#print(hotel_chain.list_hotels())
-#hotel_chain.list_reservations_by_hotel()
-
-#print(hotel.list_reservations())
-#menu(hotel_chain_name, hotel_chain)
-# Now you can interact with the hotels and reservations using the provided methods.
 
 def main():
     # inicializa objeto lista enlazada de la cadena de hoteles del tipo HotelChain
     hotel_chain = HotelChain()
+    # inicializa objeto pila de las acciones realizadas en el sistema
+    historial = Historial()
     try:
         # intenta cargar archivo de datos y configuración
         config = load_archive(find_path('config.json'))
@@ -1046,6 +1126,6 @@ def main():
     for hotel in hotels:
         hotel_chain.add_hotel(hotel)
     # llama función menú
-    menu(hotel_chain_name, hotel_chain)
+    menu(hotel_chain_name, hotel_chain, historial)
     
 main()
