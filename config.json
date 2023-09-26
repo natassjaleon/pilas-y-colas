@@ -1,0 +1,6 @@
+{
+	"hotel_chain_name": "Natassja",
+	"default_sort": "name",
+	"default_order": 0,
+ 	"file_route_name": ["./valencia.json", "./caracas.json", "./maracay.json"]
+}
