@@ -17,10 +17,10 @@ def load_archive(path):
    # Cierra el archivo .json
     f.close()
     return archive
-
-def update_archive(path):
-    f = open(path)
-    
+def update_archive(hotel_chain,path):
+    f = open(path, 'w')
+    hotel_chain.load(f)
+    f.close()
 
 # Clase para crear y gestionar una cola para las reservaciones
 class MyQueue():
@@ -166,6 +166,30 @@ class MyQueue():
             element = self.q.pop(0)
             self.q.append(element)
 
+    def to_update(self):
+        reservations = []
+        for i in self.q:
+            dictionary = {}
+            dictionary['client_name']=getattr(i, 'client_name')
+            dictionary['reservation_date']=str(getattr(i, 'reservation_datetime'))
+            dictionary['check_in']=str(getattr(i, 'check_in'))
+            dictionary['check_out']=str(getattr(i, 'check_out'))
+            dictionary['length_of_stay']=getattr(i, 'length_of_stay')
+            dictionary['number_of_guests']=getattr(i,'number_of_guests')
+            dictionary['room_number']=getattr(i,'room_number')
+            dictionary['room_type']=getattr(i,'room_type')
+            dictionary['diet']=getattr(i,'diet')
+            dictionary['email']=getattr(i, 'email')
+            dictionary['phone']=getattr(i, 'phone')
+            dictionary['total_price']=getattr(i, 'total_price')
+            dictionary['payment_method']=getattr(i, 'payment_method')
+            dictionary['notes']=getattr(i,'notes')
+            dictionary['reservation_id']=getattr(i, 'reservation_id')
+            dictionary['reservation_status']=getattr(i,'status')
+            dictionary['hotel']=getattr(i,'hotel')
+            reservations.append(dictionary)
+        return reservations
+
     # imprime todas las reservaciones de la cola
     def iterate(self):
         if self.is_empty():
@@ -188,9 +212,9 @@ class Reservation:
         if 'reservation_date' not in reservation_object:
             print("El campo de la fecha y hora de la reservación no puede estar vacío.")
             raise Exception 
-        try: self.reservation_datetime = datetime.strptime(reservation_object['reservation_date'], '%Y/%m/%d %H:%M:%S')
+        try: self.reservation_datetime = datetime.strptime(reservation_object['reservation_date'], '%Y-%m-%d %H:%M:%S')
         except:
-            print("El campo de la fecha y hora de la reservación debe estar escrito en el formato aaaa/mm/dd hh:mm:ss.")
+            print("El campo de la fecha y hora de la reservación debe estar escrito en el formato aaaa-mm-dd hh:mm:ss.")
             raise Exception
       # guarda la fecha separada de la hora
         self.reservation_date=self.reservation_datetime.date()
@@ -200,28 +224,25 @@ class Reservation:
             print("El campo de la fecha y hora del check-in no puede estar vacío.")
             raise Exception
         try:
-            self.check_in = datetime.strptime(reservation_object['check_in'], '%Y/%m/%d %H:%M:%S')
+            self.check_in = datetime.strptime(reservation_object['check_in'], '%Y-%m-%d %H:%M:%S')
          # guarda la hora de check in separada de la fecha
             self.check_in_hour = self.check_in.time()
         except:
-            print("El campo de la fecha y hora del check-in debe estar escrito en el formato aaaa/mm/dd hh:mm:ss.")
+            print("El campo de la fecha y hora del check-in debe estar escrito en el formato aaaa-mm-dd hh:mm:ss.")
             raise Exception
       # fecha de check out debe estar en formato %Y/%m/%d %H:%M:%S
         if 'check_out' not in reservation_object:
             print("El campo de la fecha y hora del check-out no puede estar vacío.")
             raise Exception
         try:
-            self.check_out = datetime.strptime(reservation_object['check_out'], '%Y/%m/%d %H:%M:%S')
+            self.check_out = datetime.strptime(reservation_object['check_out'], '%Y-%m-%d %H:%M:%S')
          # guarda la hora de check in separada de la fecha
             self.check_out_hour = self.check_out.time()
         except:
-            print("El campo de la fecha y hora del check-out debe estar escrito en el formato aaaa/mm/dd hh:mm:ss.")
+            print("El campo de la fecha y hora del check-out debe estar escrito en el formato aaaa-mm-dd hh:mm:ss.")
             raise Exception
       # genera duración de la estadía basado en check in y check out
-        if (self.check_out.date()-self.check_in.date()).days>1:
-            self.length_of_stay = str((self.check_out.date()-self.check_in.date()).days)+' días'
-        else:
-            self.length_of_stay = str((self.check_out.date()-self.check_in.date()).days)+' día'
+        self.length_of_stay = str((self.check_out.date()-self.check_in.date()).days)+" d"
 
       # número de huéspedes debe ser un entero
         if "number_of_guests" in reservation_object:
@@ -317,7 +338,9 @@ class Reservation:
             raise Exception
         self.hotel = reservation_object['hotel']
       # genera y guarda ID
-        self.reservation_id = str(uuid4())
+        if 'reservation_id' in reservation_object:
+            self.reservation_id=reservation_object['reservation_id']
+        else: self.reservation_id = str(uuid4())
 
 # Clase para crear y gestionar un objeto para cada hotel
 class Hotel:
@@ -364,6 +387,7 @@ class Hotel:
         else:
             self.reservation_queue = MyQueue()
 
+
     # Agrega reservación a la cola
     def add_reservation(self, reservation):
         try:
@@ -375,6 +399,8 @@ class Hotel:
             print("\nNo se pudo crear la reservación.")
             return False
 
+    def return_reservations(self):
+        return self.reservation_queue.to_update()
     # retorna si la cola de reservaciones está vacía
     def are_reservations(self):
         return self.reservation_queue.is_empty()
@@ -464,7 +490,19 @@ class HotelNode:
 class HotelChain:
     def __init__(self):
         self.head = None
+        
+    # actualiza archivo JSON
+    def load(self, json_file):
+        file = {}
+        current = self.head
+        file['name']=current.hotel.name
+        file['address']=current.hotel.address
+        file['phone']=current.hotel.phone
+        file['available_rooms']=current.hotel.available_rooms
+        file['reservations']=current.hotel.return_reservations()
+        json.dump(file, json_file, indent=5)
 
+        
     # agrega hotel al inicio de la lista enlazada y desplaza el resto
     def add_hotel(self, hotel):
         new_node = HotelNode(hotel)
@@ -608,7 +646,7 @@ class Historial:
         else:
             deleted_action = self.head.action
             self.head = self.head.snext
-            return deleted+action
+            return deleted_action
     def see_head(self):
         if self.is_empty():
             return None
@@ -643,7 +681,7 @@ def create_reservation():
     reservation = {}
     print("""\nAgregar reservación. Llene la siguiente información:
 *Campos obligatorios
-**Fechas en formato AAAA/MM/DD hh:mm:ss""")
+**Fechas en formato AAAA-MM-DD hh:mm:ss""")
     while flag:
         client_name = input("\nNombre del cliente*: ")
         if client_name == '':
@@ -655,29 +693,29 @@ def create_reservation():
     while flag:
         reservation_date=input("Fecha** de la reservación*: ")
         try:
-            datetime.strptime(reservation_date, '%Y/%m/%d %H:%M:%S')
+            datetime.strptime(reservation_date, '%Y-%m-%d %H:%M:%S')
             reservation['reservation_date']=reservation_date
             flag = False
         except:
-            print("\nEl campo de la fecha y hora de la reservación debe estar escrito en el formato aaaa/mm/dd hh:mm:ss.")
+            print("\nEl campo de la fecha y hora de la reservación debe estar escrito en el formato aaaa-mm-dd hh:mm:ss.")
     flag = True
     while flag:
         check_in=input("Fecha** del check-in*: ")
         try:
-            datetime.strptime(check_in, '%Y/%m/%d %H:%M:%S')
+            datetime.strptime(check_in, '%Y-%m-%d %H:%M:%S')
             reservation['check_in']=check_in
             flag = False
         except:
-            print("\nEl campo de la fecha y hora del check-in debe estar escrito en el formato aaaa/mm/dd hh:mm:ss.")
+            print("\nEl campo de la fecha y hora del check-in debe estar escrito en el formato aaaa-mm-dd hh:mm:ss.")
     flag = True
     while flag:
         check_out=input("Fecha** del check-out*: ")
         try:
-            datetime.strptime(check_out, '%Y/%m/%d %H:%M:%S')
+            datetime.strptime(check_out, '%Y-%m-%d %H:%M:%S')
             reservation['check_out']=check_out
             flag = False
         except:
-            print("\nEl campo de la fecha y hora del check-out debe estar escrito en el formato aaaa/mm/dd hh:mm:ss.")
+            print("\nEl campo de la fecha y hora del check-out debe estar escrito en el formato aaaa-mm-dd hh:mm:ss.")
     flag = True
     while flag:
         number_of_guests = input("Número de huéspedes*: ")
@@ -877,6 +915,7 @@ def menu_rooms(hotel_chain_name, hotel_chain, hotel_name, historial):
             print(" ")
             # lista las habitaciones del hotel
             hotel_chain.list_rooms(hotel_name)
+            
         elif option == '2':
             flag2=True
             room_number = input("\nIngrese el número de la habitación a consultar: ")
@@ -1033,7 +1072,8 @@ def menu_hotel(hotel_chain_name, hotel_chain, hotel_name, historial):
             print('\nOpción inválida. Ingrese un entero del 1 al 4.')
             
 # menú principal 
-def menu(hotel_chain_name, hotel_chain, historial):
+def menu(config, hotel_chain, historial):
+    hotel_chain_name = config['hotel_chain_name']
     print("\nCadena de hoteles %s's Hotels" %hotel_chain_name)
     flag=True
     while flag:
@@ -1102,6 +1142,8 @@ def menu(hotel_chain_name, hotel_chain, historial):
         
         elif option == '0':
             # exporta el historial de acciones a un archivo .txt y cierra el programa
+            for path in config['file_route_name']:
+                update_archive(hotel_chain, path)
             file = open('historial.text','a')
             file.write("Acceso al sistema: "+datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
             file.write("\n")
@@ -1133,7 +1175,8 @@ def main():
     # agrega cada hotel a la lista enlazada de la cadena de hoteles
     for hotel in hotels:
         hotel_chain.add_hotel(hotel)
+        
     # llama función menú
-    menu(hotel_chain_name, hotel_chain, historial)
+    menu(config, hotel_chain, historial)
     
 main()
